@@ -1,5 +1,18 @@
-import "@/styles/globals.css";
+import "../styles/globals.css";
+import Head from "next/head";
 
-export default function App({ Component, pageProps }) {
-  return <Component {...pageProps} />;
+function MyApp({ Component, pageProps }) {
+  return (
+    <>
+      <Head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap"
+        />
+      </Head>
+      <Component {...pageProps} />
+    </>
+  );
 }
+
+export default MyApp;
