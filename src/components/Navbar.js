@@ -39,12 +39,12 @@ const Navbar = () => {
           ) : (
             <>
               <li>
-                <Link href="/signin" className="text-white">
+                <Link href="/SignIn" className="text-white">
                   SignIn
                 </Link>
               </li>
               <li>
-                <Link href="/signup" className="text-white">
+                <Link href="/SignUp" className="text-white">
                   SignUp
                 </Link>
               </li>
