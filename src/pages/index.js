@@ -1,4 +1,3 @@
-// pages/index.js
 import Image from "next/image";
 import localFont from "next/font/local";
 import Navbar from "../components/Navbar";

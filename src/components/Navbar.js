@@ -7,7 +7,6 @@ const Navbar = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // Vérifiez si le token est présent dans localStorage
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
   }, []);

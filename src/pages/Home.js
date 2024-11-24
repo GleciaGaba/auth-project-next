@@ -7,7 +7,6 @@ export default function Home() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Remplacez l'URL par celle de votre API
     fetch("http://localhost:3001/")
       .then((response) => {
         if (!response.ok) {

@@ -1,6 +1,25 @@
-// src/pages/Article.js
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+
+// Fonction pour décoder la partie payload du token JWT
+function parseJwt(token) {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error("Failed to parse JWT:", e);
+    return null;
+  }
+}
 
 export default function Article() {
   const [comments, setComments] = useState([]);
@@ -9,19 +28,59 @@ export default function Article() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/posts/all-posts")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Fetched comments:", data);
-        setComments(data);
-      })
-      .catch((error) => console.error("Error fetching comments:", error));
+    const fetchComments = async () => {
+      const token = localStorage.getItem("token");
+      console.log("Token:", token);
+      if (token) {
+        const decodedToken = parseJwt(token);
+        if (!decodedToken) {
+          console.error("Failed to decode token");
+          return;
+        }
+        const userId = decodedToken.userId;
+        console.log("User ID:", userId);
+
+        try {
+          const response = await fetch(
+            `http://localhost:3001/api/posts/all-posts`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Error response text:", errorText);
+            throw new Error("Network response was not ok");
+          }
+
+          const data = await response.json();
+          console.log("Fetched data:", data);
+          if (Array.isArray(data.data)) {
+            const userComments = data.data.filter(
+              (comment) => comment.userId._id === userId
+            );
+            setComments(userComments);
+          } else {
+            console.error("Fetched data is not an array:", data);
+          }
+        } catch (error) {
+          console.error("Error fetching comments:", error);
+        }
+      } else {
+        console.error("No token found");
+      }
+    };
+
+    fetchComments();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
     try {
       const response = await fetch(
         "http://localhost:3001/api/posts/create-post",
@@ -38,9 +97,6 @@ export default function Article() {
         }
       );
 
-      console.log("Response status:", response.status);
-      console.log("Response headers:", response.headers);
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Error response text:", errorText);
@@ -48,13 +104,88 @@ export default function Article() {
       }
 
       const data = await response.json();
-      setComments(data);
+      setComments((prevComments) => [...prevComments, data]);
       setNewTitle("");
       setNewDescription("");
     } catch (error) {
-      //console.error("Error adding comment:", error);
+      console.error("Error adding comment:", error);
       setError("Error adding comment. Please try again.");
     }
+  };
+
+  const handleUpdate = async (commentId, updatedTitle, updatedDescription) => {
+    try {
+      console.log(
+        "Updating comment:",
+        commentId,
+        updatedTitle,
+        updatedDescription
+      );
+      const response = await fetch(
+        `http://localhost:3001/api/posts/update-post/${commentId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            title: updatedTitle,
+            description: updatedDescription,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response text:", errorText);
+        throw new Error("Network response was not ok");
+      }
+
+      const updatedComment = await response.json();
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment._id === commentId ? updatedComment : comment
+        )
+      );
+    } catch (error) {
+      console.error("Error updating comment:", error);
+    }
+  };
+
+  const handleDelete = async (commentId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/posts/delete-post/${commentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response text:", errorText);
+        throw new Error("Network response was not ok");
+      }
+
+      setComments((prevComments) =>
+        prevComments.filter((comment) => comment._id !== commentId)
+      );
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
+  };
+
+  const handleInputChange = (e, commentId, field) => {
+    const { value } = e.target;
+    setComments((prevComments) =>
+      prevComments.map((comment) =>
+        comment._id === commentId ? { ...comment, [field]: value } : comment
+      )
+    );
   };
 
   return (
@@ -62,7 +193,7 @@ export default function Article() {
       <Navbar />
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
         <div className="bg-white p-8 rounded shadow-md w-full max-w-2xl">
-          <h1 className="text-2xl mb-4">Article Comments</h1>
+          <h1 className="text-2xl mb-4">Comments</h1>
           <form onSubmit={handleSubmit} className="mb-4">
             <input
               value={newTitle}
@@ -74,24 +205,61 @@ export default function Article() {
             <textarea
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3  text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               placeholder="Add your description"
               required
             />
             <button
               type="submit"
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-3 mr-5"
+              className="p-2 bg-blue-500 text-white rounded"
             >
-              Add Post
+              Add Comment
             </button>
           </form>
-          {error && <p className="text-red-500 mb-4">{error}</p>}
+          {error && <p className="text-red-500">{error}</p>}
           <div>
             {Array.isArray(comments) &&
-              comments.map((comment) => (
-                <div key={comment.id} className="bg-gray-200 p-4 rounded mb-2">
-                  <h2 className="font-bold">{comment.title}</h2>
-                  <p>{comment.description}</p>
+              comments.map((comment, index) => (
+                <div
+                  key={index}
+                  className="mb-4 p-4 border border-gray-300 rounded bg-gray-50 shadow-sm max-w-full"
+                >
+                  <input
+                    value={comment.title}
+                    onChange={(e) => handleInputChange(e, comment._id, "title")}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 mb-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                  <textarea
+                    value={comment.description}
+                    onChange={(e) =>
+                      handleInputChange(e, comment._id, "description")
+                    }
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                  <p>
+                    Created at: {new Date(comment.createdAt).toLocaleString()}
+                  </p>
+                  <button className="mr-2 p-2 bg-green-500 text-white rounded">
+                    Modify
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleUpdate(
+                        comment._id,
+                        comment.title,
+                        comment.description
+                      )
+                    }
+                    className="mr-2 p-2 bg-yellow-500 text-white rounded"
+                  >
+                    Update
+                  </button>
+                  <button
+                    onClick={() => handleDelete(comment._id)}
+                    className="p-2 bg-red-500 text-white rounded"
+                  >
+                    Delete
+                  </button>
                 </div>
               ))}
           </div>
