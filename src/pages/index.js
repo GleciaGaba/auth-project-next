@@ -1,22 +1,12 @@
-import Image from "next/image";
-import localFont from "next/font/local";
+// pages/index.js
+import React from "react";
 import Navbar from "../components/Navbar";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
 
 export default function Home() {
   return (
     <div>
       <Navbar />
+      <h1>Welcome to the Home Page</h1>
     </div>
   );
 }
