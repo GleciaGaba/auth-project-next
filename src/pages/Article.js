@@ -104,8 +104,11 @@ export default function Article() {
         throw new Error("Network response was not ok");
       }
 
-      const data = await response.json();
-      setComments((prevComments) => [...prevComments, data]);
+      const result = await response.json();
+      const newComment = result.data; // Extraire les données du nouveau commentaire
+      console.log("New comment data:", newComment);
+
+      setComments((prevComments) => [...prevComments, newComment]); // Mettre à jour l'état des commentaires
       setNewTitle("");
       setNewDescription("");
     } catch (error) {
@@ -113,7 +116,6 @@ export default function Article() {
       setError("Error adding comment. Please try again.");
     }
   };
-
   const handleUpdate = async (commentId, updatedTitle, updatedDescription) => {
     if (editCommentId === commentId) {
       // Si le commentaire est déjà en mode édition, soumettre les modifications
@@ -145,7 +147,10 @@ export default function Article() {
           throw new Error("Network response was not ok");
         }
 
-        const updatedComment = await response.json();
+        const result = await response.json();
+        const updatedComment = result.data; // Extraire les données du commentaire mis à jour
+        console.log("Updated comment data:", updatedComment);
+
         setComments((prevComments) =>
           prevComments.map((comment) =>
             comment._id === commentId ? updatedComment : comment
@@ -160,10 +165,9 @@ export default function Article() {
       setEditCommentId(commentId);
     }
   };
-
   const handleDelete = async (commentId) => {
     try {
-      console.log("Deleting comment:", commentId); // Ajoutez ce journal pour vérifier les données envoyées
+      console.log("Deleting comment:", commentId);
       const response = await fetch(
         `http://localhost:3001/api/posts/delete-post?_id=${commentId}`,
         {
@@ -253,7 +257,15 @@ export default function Article() {
                   ) : (
                     <>
                       <h2 className="text-xl font-bold">{comment.title}</h2>
-                      <p className="text-gray-700">{comment.description}</p>
+                      <p
+                        className="text-gray-700"
+                        style={{
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {comment.description}
+                      </p>
                     </>
                   )}
                   <p>
