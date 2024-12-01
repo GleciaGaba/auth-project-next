@@ -32,37 +32,37 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center">
         <div className="text-white text-lg font-bold">
           <Link href="/" legacyBehavior>
-            <a>Auth Exercise</a>
+            Auth Exercise
           </Link>
         </div>
         <div className="flex space-x-4 items-center">
           {isLoggedIn ? (
             <>
-              <li className="text-white flex items-center">
-                <i className="fas fa-user-circle mr-2"></i>
+              <div className="text-white flex items-center">
+                <div className="fas fa-user-circle mr-2"></div>
                 {user?.email}
-              </li>
-              <li>
+              </div>
+              <div>
                 <button
                   onClick={handleLogout}
                   className="text-white bg-red-500 hover:bg-red-700 font-bold py-2 px-4 rounded"
                 >
                   Logout
                 </button>
-              </li>
+              </div>
             </>
           ) : (
             <>
-              <li>
+              <div className="text-white">
                 <Link href="/SignIn" legacyBehavior>
-                  <a className="text-white">SignIn</a>
+                  SignIn
                 </Link>
-              </li>
-              <li>
+              </div>
+              <div className="text-white">
                 <Link href="/SignUp" legacyBehavior>
-                  <a className="text-white">SignUp</a>
+                  SignUp
                 </Link>
-              </li>
+              </div>
             </>
           )}
         </div>
